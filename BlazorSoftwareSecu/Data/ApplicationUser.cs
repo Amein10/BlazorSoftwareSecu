@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Identity;
+using System.ComponentModel.DataAnnotations;
 
 namespace BlazorSoftwareSecu.Data
 {
-    // Add profile data for application users by adding properties to the ApplicationUser class
     public class ApplicationUser : IdentityUser
     {
+        [Required]
+        [StringLength(11, MinimumLength = 10)]
+        public string CPR { get; set; } = string.Empty;
     }
-
 }

@@ -5,6 +5,7 @@
 @using System.Text.Encodings.Web
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.AspNetCore.Components.Forms
 @using BlazorSoftwareSecu.Data
 
 @inject UserManager<ApplicationUser> UserManager
@@ -27,24 +28,35 @@
             <h2>Create a new account.</h2>
             <hr />
             <ValidationSummary class="text-danger" role="alert" />
+
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
                 <label for="Input.Email">Email</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger" />
             </div>
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.CPR" id="Input.CPR" class="form-control" autocomplete="off" aria-required="true" placeholder="CPR-nummer" />
+                <label for="Input.CPR">CPR-nummer</label>
+                <ValidationMessage For="() => Input.CPR" class="text-danger" />
+            </div>
+
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
                 <label for="Input.Password">Password</label>
                 <ValidationMessage For="() => Input.Password" class="text-danger" />
             </div>
+
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
                 <label for="Input.ConfirmPassword">Confirm Password</label>
                 <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
             </div>
+
             <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
         </EditForm>
     </div>
+
     <div class="col-lg-4 col-lg-offset-2">
         <section>
             <h3>Use another service to register.</h3>
@@ -63,7 +75,9 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private string? Message => identityErrors is null
+        ? null
+        : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
     protected override void OnInitialized()
     {
@@ -74,9 +88,13 @@
     {
         var user = CreateUser();
 
+        user.CPR = Input.CPR;
+
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
         var result = await UserManager.CreateAsync(user, Input.Password);
 
         if (!result.Succeeded)
@@ -90,17 +108,30 @@
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
         code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
         var callbackUrl = NavigationManager.GetUriWithQueryParameters(
             NavigationManager.ToAbsoluteUri("Account/ConfirmEmail").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
+            new Dictionary<string, object?>
+            {
+                ["userId"] = userId,
+                ["code"] = code,
+                ["returnUrl"] = ReturnUrl
+            });
 
-        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
+        await EmailSender.SendConfirmationLinkAsync(
+            user,
+            Input.Email,
+            HtmlEncoder.Default.Encode(callbackUrl));
 
         if (UserManager.Options.SignIn.RequireConfirmedAccount)
         {
             RedirectManager.RedirectTo(
                 "Account/RegisterConfirmation",
-                new() { ["email"] = Input.Email, ["returnUrl"] = ReturnUrl });
+                new()
+                {
+                    ["email"] = Input.Email,
+                    ["returnUrl"] = ReturnUrl
+                });
         }
         else
         {
@@ -117,7 +148,8 @@
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
+            throw new InvalidOperationException(
+                $"Can't create an instance of '{nameof(ApplicationUser)}'. " +
                 $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
         }
     }
@@ -128,25 +160,31 @@
         {
             throw new NotSupportedException("The default UI requires a user store with email support.");
         }
+
         return (IUserEmailStore<ApplicationUser>)UserStore;
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email er påkrævet.")]
+        [EmailAddress(ErrorMessage = "Indtast en gyldig email.")]
         [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "CPR-nummer er påkrævet.")]
+        [RegularExpression(@"^\d{6}-?\d{4}$", ErrorMessage = "CPR skal være 10 cifre eller formatet 010203-1234.")]
+        [Display(Name = "CPR-nummer")]
+        public string CPR { get; set; } = "";
+
+        [Required(ErrorMessage = "Password er påkrævet.")]
+        [StringLength(100, ErrorMessage = "Password skal være mindst {2} og højst {1} tegn.", MinimumLength = 10)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Compare("Password", ErrorMessage = "Password og gentaget password matcher ikke.")]
         public string ConfirmPassword { get; set; } = "";
     }
 }
