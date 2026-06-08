@@ -1,0 +1,25 @@
+﻿@page "/roletest"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+
+<h1>Role Test</h1>
+
+<AuthorizeView Roles="Borger">
+    <Authorized>
+        <h3>✅ Du er Borger</h3>
+    </Authorized>
+    <NotAuthorized>
+        <h3>❌ Du er ikke Borger</h3>
+    </NotAuthorized>
+</AuthorizeView>
+
+<AuthorizeView Roles="Admin">
+    <Authorized>
+        <h3>✅ Du er Admin</h3>
+    </Authorized>
+    <NotAuthorized>
+        <h3>❌ Du er ikke Admin</h3>
+    </NotAuthorized>
+</AuthorizeView>
