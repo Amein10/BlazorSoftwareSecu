@@ -1,0 +1,81 @@
+﻿@page "/activities"
+@attribute [Authorize]
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+@using BlazorSoftwareSecu.Data
+@using BlazorSoftwareSecu.Models
+
+@inject ApplicationDbContext DbContext
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<h1>Traumeterapeutiske aktiviteter</h1>
+
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert alert-success">@Message</div>
+}
+
+@if (activities.Count == 0)
+{
+    <p>Der findes ingen aktiviteter endnu.</p>
+}
+else
+{
+    @foreach (var activity in activities)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <h4>@activity.Title</h4>
+                <p>@activity.Description</p>
+                <p><strong>Dato:</strong> @activity.Date.ToString("dd-MM-yyyy HH:mm")</p>
+
+                <button class="btn btn-primary" @onclick="() => Enroll(activity.Id)">
+                    Tilmeld
+                </button>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<Activity> activities = new();
+    private string? Message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        activities = await DbContext.Activities.ToListAsync();
+    }
+
+    private async Task Enroll(int activityId)
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (userId is null)
+        {
+            return;
+        }
+
+        var alreadyEnrolled = await DbContext.Enrollments
+            .AnyAsync(e => e.UserId == userId && e.ActivityId == activityId);
+
+        if (alreadyEnrolled)
+        {
+            Message = "Du er allerede tilmeldt denne aktivitet.";
+            return;
+        }
+
+        DbContext.Enrollments.Add(new Enrollment
+        {
+            UserId = userId,
+            ActivityId = activityId
+        });
+
+        await DbContext.SaveChangesAsync();
+
+        Message = "Du er nu tilmeldt aktiviteten.";
+    }
+}

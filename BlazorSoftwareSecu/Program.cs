@@ -1,6 +1,7 @@
 using BlazorSoftwareSecu.Components;
 using BlazorSoftwareSecu.Components.Account;
 using BlazorSoftwareSecu.Data;
+using BlazorSoftwareSecu.Models;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,10 +17,10 @@ builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
 builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+})
     .AddIdentityCookies();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -89,6 +90,37 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+    if (!db.Activities.Any())
+    {
+        db.Activities.AddRange(
+            new Activity
+            {
+                Title = "Traumeterapeutisk samtale",
+                Description = "En rolig samtale med fokus på stress, arbejdstraumer og pensionering.",
+                Date = DateTime.Now.AddDays(3)
+            },
+            new Activity
+            {
+                Title = "Mindfulness for tidligere softwareudviklere",
+                Description = "Afslapning, åndedrætsøvelser og mental restitution.",
+                Date = DateTime.Now.AddDays(7)
+            },
+            new Activity
+            {
+                Title = "Fælles gåtur og netværk",
+                Description = "Social aktivitet for pensionerede softwareudviklere.",
+                Date = DateTime.Now.AddDays(10)
+            }
+        );
+
+        db.SaveChanges();
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -97,9 +129,9 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 app.UseHttpsRedirection();
 
@@ -109,7 +141,6 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();
