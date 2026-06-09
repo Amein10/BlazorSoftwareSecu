@@ -7,6 +7,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using Microsoft.AspNetCore.Components.Forms
 @using BlazorSoftwareSecu.Data
+@using BlazorSoftwareSecu.Services
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -15,6 +16,7 @@
 @inject ILogger<Register> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
+@inject CprEncryptionService CprEncryptionService
 
 <PageTitle>Register</PageTitle>
 
@@ -88,7 +90,7 @@
     {
         var user = CreateUser();
 
-        user.CPR = Input.CPR;
+        user.CPR = CprEncryptionService.Encrypt(Input.CPR);
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
 

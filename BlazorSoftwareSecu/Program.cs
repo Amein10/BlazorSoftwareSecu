@@ -2,6 +2,7 @@ using BlazorSoftwareSecu.Components;
 using BlazorSoftwareSecu.Components.Account;
 using BlazorSoftwareSecu.Data;
 using BlazorSoftwareSecu.Models;
+using BlazorSoftwareSecu.Services;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -23,9 +24,12 @@ builder.Services.AddAuthentication(options =>
 })
     .AddIdentityCookies();
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
+
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
@@ -73,11 +77,31 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+builder.Services.AddScoped<CprEncryptionService>();
+
 var app = builder.Build();
 
+// Seed roller først
+using (var scope = app.Services.CreateScope())
+{
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+    string[] roles = { "Admin", "Borger" };
+
+    foreach (var role in roles)
+    {
+        if (!await roleManager.RoleExistsAsync(role))
+        {
+            await roleManager.CreateAsync(new IdentityRole(role));
+        }
+    }
+}
+
+// Seed admin-bruger bagefter
 using (var scope = app.Services.CreateScope())
 {
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    var cprEncryptionService = scope.ServiceProvider.GetRequiredService<CprEncryptionService>();
 
     string adminEmail = "admin@test.dk";
     string adminPassword = "Password123!";
@@ -91,7 +115,7 @@ using (var scope = app.Services.CreateScope())
             UserName = adminEmail,
             Email = adminEmail,
             EmailConfirmed = true,
-            CPR = "0101011234"
+            CPR = cprEncryptionService.Encrypt("010101-1234")
         };
 
         var result = await userManager.CreateAsync(adminUser, adminPassword);
@@ -110,6 +134,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Seed aktiviteter
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
