@@ -53,12 +53,20 @@
                     </NavLink>
                 </div>
 
-                <div class="nav-item px-3">
-                    <form action="Account/Logout" method="post">
+                <div class="nav-item px-3 mt-2">
+                    <form action="Account/Logout"
+                          method="post"
+                          onsubmit="return confirm('Er du sikker på at du vil logge ud?');">
+
                         <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="nav-link">
-                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span> Logout
+
+                        <input type="hidden"
+                               name="ReturnUrl"
+                               value="@currentUrl" />
+
+                        <button type="submit" class="nav-link text-danger">
+                            <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true"></span>
+                            Log ud
                         </button>
                     </form>
                 </div>
