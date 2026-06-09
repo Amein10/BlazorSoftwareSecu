@@ -109,10 +109,19 @@
                                 <td class="text-end pe-4">
                                     @if (isAdmin)
                                     {
-                                        <button class="btn btn-outline-warning btn-sm me-2"
-                                                @onclick="() => RemoveAdmin(user)">
-                                            Fjern Admin
-                                        </button>
+                                        @if (user.Id == currentUserId)
+                                        {
+                                            <button class="btn btn-outline-secondary btn-sm me-2" disabled>
+                                                Kan ikke fjerne egen Admin
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button class="btn btn-outline-warning btn-sm me-2"
+                                                    @onclick="() => RemoveAdmin(user)">
+                                                Fjern Admin
+                                            </button>
+                                        }
                                     }
                                     else
                                     {

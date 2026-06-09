@@ -9,24 +9,53 @@
         <div class="top-row px-4 d-flex justify-content-end align-items-center gap-3">
 
             <AuthorizeView Context="topContext">
+
                 <Authorized>
-                    <a href="/Account/Manage">
-                        @topContext.User.Identity?.Name
+
+                    <a href="/Account/Manage"
+                       class="d-flex align-items-center text-decoration-none">
+
+                        <i class="bi bi-person-circle me-2"></i>
+
+                        <span>
+                            @topContext.User.Identity?.Name
+                        </span>
+
+                        @if (topContext.User.IsInRole("Admin"))
+                        {
+                            <span class="badge bg-warning text-dark ms-2">
+                                Admin
+                            </span>
+                        }
+                        else if (topContext.User.IsInRole("Borger"))
+                        {
+                            <span class="badge bg-success ms-2">
+                                Borger
+                            </span>
+                        }
+
                     </a>
+
                 </Authorized>
 
                 <NotAuthorized>
-                    <a href="/Account/Login">
+
+                    <a href="/Account/Login"
+                       class="text-decoration-none">
                         Login
                     </a>
 
-                    <a href="/Account/Register">
+                    <a href="/Account/Register"
+                       class="text-decoration-none">
                         Register
                     </a>
+
                 </NotAuthorized>
+
             </AuthorizeView>
 
-            <a href="#">
+            <a href="#"
+               class="text-decoration-none">
                 About
             </a>
 
