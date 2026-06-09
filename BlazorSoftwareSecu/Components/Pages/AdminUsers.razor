@@ -5,71 +5,156 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using BlazorSoftwareSecu.Data
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@using Microsoft.JSInterop
 
 @inject UserManager<ApplicationUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 
-<h1>Admin - Brugeradministration</h1>
+<PageTitle>Brugeradministration</PageTitle>
 
-@if (!string.IsNullOrEmpty(Message))
-{
-    <div class="alert alert-success">@Message</div>
-}
+<div class="container py-4">
 
-@if (users.Count == 0)
-{
-    <p>Der findes ingen brugere.</p>
-}
-else
-{
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Email</th>
-                <th>CPR</th>
-                <th>Roller</th>
-                <th>Handlinger</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var user in users)
-            {
-                var isAdmin = userRoles[user.Id].Contains("Admin");
+    <div class="mb-4">
+        <h1 class="fw-bold">Admin - Brugeradministration</h1>
+        <p class="text-muted">
+            Administrer brugere, roller og adgang til sundhedscenterets portal.
+        </p>
+    </div>
 
-                <tr>
-                    <td>@user.Email</td>
-                    <td>@user.CPR</td>
-                    <td>@string.Join(", ", userRoles[user.Id])</td>
-                    <td>
-                        @if (isAdmin)
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <div class="alert alert-success rounded-3 shadow-sm">@Message</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h6 class="text-muted">Antal brugere</h6>
+                    <h2 class="fw-bold">@users.Count</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h6 class="text-muted">Borgere</h6>
+                    <h2 class="fw-bold">@CitizenCount</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h6 class="text-muted">Administratorer</h6>
+                    <h2 class="fw-bold">@AdminCount</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (users.Count == 0)
+    {
+        <div class="alert alert-info">
+            Der findes ingen brugere.
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow rounded-4">
+            <div class="card-body p-0">
+
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Email</th>
+                            <th>Roller</th>
+                            <th class="text-end pe-4">Handlinger</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @foreach (var user in users)
                         {
-                            <button class="btn btn-warning btn-sm me-2"
-                                    @onclick="() => RemoveAdmin(user)">
-                                Fjern Admin
-                            </button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-success btn-sm me-2"
-                                    @onclick="() => MakeAdmin(user)">
-                                Gør Admin
-                            </button>
-                        }
+                            var isAdmin = userRoles[user.Id].Contains("Admin");
+                            var isBorger = userRoles[user.Id].Contains("Borger");
 
-                        <button class="btn btn-danger btn-sm"
-                                @onclick="() => DeleteUser(user)">
-                            Slet bruger
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-}
+                            <tr>
+                                <td class="ps-4">
+                                    <strong>@user.Email</strong>
+                                </td>
+
+                                <td>
+                                    @if (isAdmin)
+                                    {
+                                        <span class="badge bg-warning text-dark me-1">Admin</span>
+                                    }
+
+                                    @if (isBorger)
+                                    {
+                                        <span class="badge bg-success me-1">Borger</span>
+                                    }
+
+                                    @if (!isAdmin && !isBorger)
+                                    {
+                                        <span class="badge bg-secondary">Ingen rolle</span>
+                                    }
+                                </td>
+
+                                <td class="text-end pe-4">
+                                    @if (isAdmin)
+                                    {
+                                        <button class="btn btn-outline-warning btn-sm me-2"
+                                                @onclick="() => RemoveAdmin(user)">
+                                            Fjern Admin
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-outline-success btn-sm me-2"
+                                                @onclick="() => MakeAdmin(user)">
+                                            Gør Admin
+                                        </button>
+                                    }
+
+                                    @if (user.Id == currentUserId)
+                                    {
+                                        <button class="btn btn-outline-secondary btn-sm" disabled>
+                                            Kan ikke slette dig selv
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-outline-danger btn-sm"
+                                                @onclick="() => ConfirmDeleteUser(user)">
+                                            Slet bruger
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    }
+
+</div>
 
 @code {
     private List<ApplicationUser> users = new();
     private Dictionary<string, IList<string>> userRoles = new();
     private string? Message;
+    private string? currentUserId;
+
+    private int AdminCount => userRoles.Values.Count(roles => roles.Contains("Admin"));
+    private int CitizenCount => userRoles.Values.Count(roles => roles.Contains("Borger"));
 
     protected override async Task OnInitializedAsync()
     {
@@ -78,7 +163,13 @@ else
 
     private async Task LoadUsers()
     {
-        users = await UserManager.Users.ToListAsync();
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        users = await UserManager.Users
+            .OrderBy(u => u.Email)
+            .ToListAsync();
+
         userRoles.Clear();
 
         foreach (var user in users)
@@ -100,6 +191,12 @@ else
 
     private async Task RemoveAdmin(ApplicationUser user)
     {
+        if (user.Id == currentUserId)
+        {
+            Message = "Du kan ikke fjerne Admin-rollen fra din egen bruger.";
+            return;
+        }
+
         if (await UserManager.IsInRoleAsync(user, "Admin"))
         {
             await UserManager.RemoveFromRoleAsync(user, "Admin");
@@ -107,6 +204,24 @@ else
         }
 
         await LoadUsers();
+    }
+
+    private async Task ConfirmDeleteUser(ApplicationUser user)
+    {
+        if (user.Id == currentUserId)
+        {
+            Message = "Du kan ikke slette din egen bruger.";
+            return;
+        }
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>(
+            "confirm",
+            $"Er du sikker på, at du vil slette brugeren {user.Email}?");
+
+        if (confirmed)
+        {
+            await DeleteUser(user);
+        }
     }
 
     private async Task DeleteUser(ApplicationUser user)
