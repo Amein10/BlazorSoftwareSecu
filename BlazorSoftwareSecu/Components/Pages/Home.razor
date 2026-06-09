@@ -2,90 +2,75 @@
 
 <PageTitle>Albertslund Sundhedscenter</PageTitle>
 
-<div class="container mt-4">
+<div class="container py-4">
 
-    <div class="text-center mb-4">
+    <section class="text-center mb-4">
         <img src="images/logo.png"
              alt="Albertslund Sundhedscenter"
              class="img-fluid"
-             style="max-width: 420px; margin-top: -30px;" />
-    </div>
+             style="max-width: 360px;" />
+    </section>
 
-    <div class="p-5 mb-4 bg-light rounded-3 shadow">
-        <div class="container-fluid py-4 text-center">
+    <section class="rounded-4 shadow p-5 text-center mb-4"
+             style="background: linear-gradient(135deg, #f8fbfa, #eef5f2);">
 
-            <h1 class="display-5 fw-bold">
-                Velkommen til Albertslund Sundhedscenter
-            </h1>
+        <h1 class="display-5 fw-bold mb-3">
+            Velkommen til Albertslund Sundhedscenter
+        </h1>
 
-            <p class="lead">
-                Portal for pensionerede softwareudviklere med fokus på trivsel,
-                heling og fællesskab.
-            </p>
+        <p class="lead mb-4">
+            Et trygt digitalt sundhedstilbud for pensionerede softwareudviklere.
+        </p>
 
-            <hr />
+        <p class="mb-4">
+            Her kan du oprette en sikker brugerprofil, logge ind og tilmelde dig
+            traumeterapeutiske aktiviteter, mindfulness-forløb og sociale arrangementer.
+        </p>
 
-            <p>
-                Her kan registrerede borgere se og tilmelde sig traumeterapeutiske
-                aktiviteter, mindfulness-forløb og sociale arrangementer.
-            </p>
+        <AuthorizeView>
+            <Authorized>
+                <a href="/activities" class="btn btn-success btn-lg px-4">
+                    Se aktiviteter
+                </a>
+            </Authorized>
+        </AuthorizeView>
+    </section>
 
-            <AuthorizeView>
-                <Authorized>
-                    <a href="/activities" class="btn btn-primary btn-lg">
-                        Se aktiviteter
-                    </a>
-                </Authorized>
-                <NotAuthorized>
-                    <a href="/Account/Register" class="btn btn-primary btn-lg me-2">
-                        Opret bruger
-                    </a>
-                    <a href="/Account/Login" class="btn btn-outline-primary btn-lg">
-                        Log ind
-                    </a>
-                </NotAuthorized>
-            </AuthorizeView>
-        </div>
-    </div>
-
-    <div class="row">
+    <section class="row g-4">
 
         <div class="col-md-4">
-            <div class="card shadow-sm mb-3 h-100">
-                <div class="card-body">
-                    <h4>Traumeterapi</h4>
-                    <p>
-                        Professionelle samtaler med fokus på stress,
-                        arbejdstraumer og trivsel.
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold">Traumeterapi</h4>
+                    <p class="text-muted">
+                        Samtaler med fokus på stress, arbejdstraumer og psykisk trivsel.
                     </p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card shadow-sm mb-3 h-100">
-                <div class="card-body">
-                    <h4>Mindfulness</h4>
-                    <p>
-                        Afslapning, meditation og mentale værktøjer
-                        til en roligere hverdag.
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold">Mindfulness</h4>
+                    <p class="text-muted">
+                        Øvelser og mentale værktøjer til ro, balance og restitution.
                     </p>
                 </div>
             </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card shadow-sm mb-3 h-100">
-                <div class="card-body">
-                    <h4>Fællesskab</h4>
-                    <p>
-                        Sociale aktiviteter og netværk med andre
-                        pensionerede softwareudviklere.
+            <div class="card border-0 shadow-sm h-100 rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold">Fællesskab</h4>
+                    <p class="text-muted">
+                        Sociale aktiviteter og netværk med andre tidligere softwareudviklere.
                     </p>
                 </div>
             </div>
         </div>
 
-    </div>
+    </section>
 
 </div>
