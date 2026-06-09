@@ -2,24 +2,54 @@
 @attribute [Authorize]
 
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
 
-<h1>Role Test</h1>
+<h1>Brugerinformation</h1>
+
+<p>
+    Her kan du se hvilken rolle den aktuelle bruger har.
+</p>
+
+<hr />
 
 <AuthorizeView Roles="Borger">
     <Authorized>
-        <h3>✅ Du er Borger</h3>
+        <div class="alert alert-info">
+            <h4>👤 Borger</h4>
+            <p>Du er logget ind som registreret borger.</p>
+        </div>
     </Authorized>
-    <NotAuthorized>
-        <h3>❌ Du er ikke Borger</h3>
-    </NotAuthorized>
 </AuthorizeView>
 
 <AuthorizeView Roles="Admin">
     <Authorized>
-        <h3>✅ Du er Admin</h3>
+        <div class="alert alert-success">
+            <h4>🔑 Administrator</h4>
+            <p>Du har administratorrettigheder.</p>
+        </div>
     </Authorized>
-    <NotAuthorized>
-        <h3>❌ Du er ikke Admin</h3>
-    </NotAuthorized>
+</AuthorizeView>
+
+<AuthorizeView>
+    <Authorized Context="authState">
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5>Aktuel bruger</h5>
+
+                <p>
+                    <strong>Email:</strong>
+                    @authState.User.Identity?.Name
+                </p>
+
+                <p>
+                    <strong>Admin:</strong>
+                    @(authState.User.IsInRole("Admin") ? "Ja" : "Nej")
+                </p>
+
+                <p>
+                    <strong>Borger:</strong>
+                    @(authState.User.IsInRole("Borger") ? "Ja" : "Nej")
+                </p>
+            </div>
+        </div>
+    </Authorized>
 </AuthorizeView>

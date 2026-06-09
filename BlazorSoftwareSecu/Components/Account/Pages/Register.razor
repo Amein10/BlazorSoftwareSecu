@@ -18,53 +18,103 @@
 @inject IdentityRedirectManager RedirectManager
 @inject CprEncryptionService CprEncryptionService
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Opret bruger</PageTitle>
 
-<h1>Register</h1>
+<div class="container py-5">
 
-<div class="row">
-    <div class="col-lg-6">
-        <StatusMessage Message="@Message" />
-        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
-            <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
-            <ValidationSummary class="text-danger" role="alert" />
-
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
-            </div>
-
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.CPR" id="Input.CPR" class="form-control" autocomplete="off" aria-required="true" placeholder="CPR-nummer" />
-                <label for="Input.CPR">CPR-nummer</label>
-                <ValidationMessage For="() => Input.CPR" class="text-danger" />
-            </div>
-
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
-            </div>
-
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
-            </div>
-
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
+    <div class="text-center mb-4">
+        <img src="/images/logo.png"
+             alt="Albertslund Sundhedscenter"
+             class="img-fluid"
+             style="max-width: 320px;" />
     </div>
 
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body p-5">
+
+                    <h1 class="h3 fw-bold text-center mb-2">
+                        Opret bruger
+                    </h1>
+
+                    <p class="text-muted text-center mb-4">
+                        Opret en sikker profil for at tilmelde dig sundhedscenterets aktiviteter.
+                    </p>
+
+                    <StatusMessage Message="@Message" />
+
+                    <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
+                        <DataAnnotationsValidator />
+
+                        <ValidationSummary class="text-danger" role="alert" />
+
+                        <div class="form-floating mb-3">
+                            <InputText @bind-Value="Input.Email"
+                                       id="Input.Email"
+                                       class="form-control"
+                                       autocomplete="username"
+                                       aria-required="true"
+                                       placeholder="name@example.com" />
+                            <label for="Input.Email">Email</label>
+                            <ValidationMessage For="() => Input.Email" class="text-danger" />
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <InputText @bind-Value="Input.CPR"
+                                       id="Input.CPR"
+                                       class="form-control"
+                                       autocomplete="off"
+                                       aria-required="true"
+                                       placeholder="123456-0000" />
+                            <label for="Input.CPR">CPR-nummer</label>
+                            <ValidationMessage For="() => Input.CPR" class="text-danger" />
+                        </div>
+
+                        <div class="form-text mb-3">
+                            CPR gemmes krypteret og bruges kun til brugeridentifikation.
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <InputText type="password"
+                                       @bind-Value="Input.Password"
+                                       id="Input.Password"
+                                       class="form-control"
+                                       autocomplete="new-password"
+                                       aria-required="true"
+                                       placeholder="password" />
+                            <label for="Input.Password">Password</label>
+                            <ValidationMessage For="() => Input.Password" class="text-danger" />
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <InputText type="password"
+                                       @bind-Value="Input.ConfirmPassword"
+                                       id="Input.ConfirmPassword"
+                                       class="form-control"
+                                       autocomplete="new-password"
+                                       aria-required="true"
+                                       placeholder="password" />
+                            <label for="Input.ConfirmPassword">Gentag password</label>
+                            <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
+                        </div>
+
+                        <button type="submit" class="w-100 btn btn-success btn-lg">
+                            Opret bruger
+                        </button>
+
+                        <div class="text-center mt-4">
+                            <span class="text-muted">Har du allerede en bruger?</span>
+                            <a href="/Account/Login">Log ind her</a>
+                        </div>
+
+                    </EditForm>
+
+                </div>
+            </div>
+
+        </div>
     </div>
 </div>
 
