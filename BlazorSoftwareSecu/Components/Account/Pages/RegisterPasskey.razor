@@ -1,0 +1,199 @@
+﻿@page "/Account/RegisterPasskey"
+
+@using System.ComponentModel.DataAnnotations
+@using System.Buffers.Text
+@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Components.Forms
+@using BlazorSoftwareSecu.Data
+@using BlazorSoftwareSecu.Services
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+@inject CprEncryptionService CprEncryptionService
+
+<PageTitle>Opret bruger med passkey</PageTitle>
+
+<div class="container py-5">
+    <div class="text-center mb-4">
+        <img src="/images/logo.png" class="img-fluid" style="max-width: 320px;" />
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body p-5">
+
+                    <h1 class="h3 fw-bold text-center mb-2">Opret bruger med passkey</h1>
+                    <p class="text-muted text-center mb-4">
+                        Opret en bruger uden password. Login sker med passkey.
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(Message))
+                    {
+                        <div class="alert alert-danger">@Message</div>
+                    }
+
+                    @if (!showPasskeyStep)
+                    {
+                        <EditForm Model="Input" method="post" OnValidSubmit="CreatePasswordlessUser" FormName="register-passkey-user">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary class="text-danger" />
+
+                            <div class="form-floating mb-3">
+                                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" placeholder="name@example.com" />
+                                <label for="Input.Email">Email</label>
+                                <ValidationMessage For="() => Input.Email" class="text-danger" />
+                            </div>
+
+                            <div class="form-floating mb-3">
+                                <InputText @bind-Value="Input.CPR" id="Input.CPR" class="form-control" autocomplete="off" placeholder="123456-0000" />
+                                <label for="Input.CPR">CPR-nummer</label>
+                                <ValidationMessage For="() => Input.CPR" class="text-danger" />
+                            </div>
+
+                            <div class="alert alert-info">
+                                Brugeren oprettes i Identity uden password.
+                            </div>
+
+                            <button type="submit" class="w-100 btn btn-success btn-lg">
+                                Fortsæt til passkey
+                            </button>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="alert alert-success">
+                            Brugeren er oprettet uden password. Opret nu din passkey.
+                        </div>
+
+                        <form @formname="add-passkey-register" @onsubmit="AddPasskey" method="post">
+                            <AntiforgeryToken />
+
+                            <PasskeySubmit Operation="PasskeyOperation.Create"
+                                           Name="PasskeyInput"
+                                           class="w-100 btn btn-success btn-lg">
+                                Opret passkey
+                            </PasskeySubmit>
+                        </form>
+                    }
+
+                    <div class="text-center mt-4">
+                        <a href="/Account/LoginPasskey">Log ind med passkey</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? Message;
+    private bool showPasskeyStep;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "register-passkey-user")]
+    private InputModel Input { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "add-passkey-register")]
+    private PasskeyInputModel PasskeyInput { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Input ??= new();
+        PasskeyInput ??= new();
+
+        var user = await UserManager.GetUserAsync(HttpContext.User);
+        showPasskeyStep = user is not null && !(await UserManager.GetPasskeysAsync(user)).Any();
+    }
+
+    private async Task CreatePasswordlessUser(EditContext editContext)
+    {
+        var existingUser = await UserManager.FindByEmailAsync(Input.Email);
+
+        if (existingUser is not null)
+        {
+            Message = "Der findes allerede en bruger med denne email.";
+            return;
+        }
+
+        var user = Activator.CreateInstance<ApplicationUser>();
+
+        user.CPR = CprEncryptionService.Encrypt(Input.CPR);
+        user.EmailConfirmed = true;
+
+        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+
+        var emailStore = (IUserEmailStore<ApplicationUser>)UserStore;
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
+        var result = await UserManager.CreateAsync(user);
+
+        if (!result.Succeeded)
+        {
+            Message = $"Fejl: {string.Join(", ", result.Errors.Select(e => e.Description))}";
+            return;
+        }
+
+        await UserManager.AddToRoleAsync(user, "Borger");
+        await SignInManager.SignInAsync(user, isPersistent: false);
+
+        RedirectManager.RedirectTo("Account/RegisterPasskey");
+    }
+
+    private async Task AddPasskey()
+    {
+        var user = await UserManager.GetUserAsync(HttpContext.User);
+
+        if (user is null)
+        {
+            Message = "Brugeren kunne ikke findes.";
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(PasskeyInput.Error))
+        {
+            Message = PasskeyInput.Error;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(PasskeyInput.CredentialJson))
+        {
+            Message = "Browseren returnerede ikke en passkey.";
+            return;
+        }
+
+        var attestationResult = await SignInManager.PerformPasskeyAttestationAsync(PasskeyInput.CredentialJson);
+
+        if (!attestationResult.Succeeded)
+        {
+            Message = $"Passkey kunne ikke oprettes: {attestationResult.Failure.Message}";
+            return;
+        }
+
+        var addResult = await UserManager.AddOrUpdatePasskeyAsync(user, attestationResult.Passkey);
+
+        if (!addResult.Succeeded)
+        {
+            Message = "Passkey kunne ikke gemmes på brugeren.";
+            return;
+        }
+
+        RedirectManager.RedirectTo("activities");
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "Email er påkrævet.")]
+        [EmailAddress(ErrorMessage = "Indtast en gyldig email.")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "CPR-nummer er påkrævet.")]
+        [RegularExpression(@"^\d{6}-?\d{4}$", ErrorMessage = "CPR skal være 10 cifre eller formatet 010203-1234.")]
+        public string CPR { get; set; } = "";
+    }
+}

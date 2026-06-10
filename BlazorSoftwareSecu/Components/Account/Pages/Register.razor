@@ -40,14 +40,13 @@
                     </h1>
 
                     <p class="text-muted text-center mb-4">
-                        Opret en sikker profil for at tilmelde dig sundhedscenterets aktiviteter.
+                        Opret en sikker profil. Efter oprettelse skal du aktivere 2FA med QR-kode.
                     </p>
 
                     <StatusMessage Message="@Message" />
 
                     <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
                         <DataAnnotationsValidator />
-
                         <ValidationSummary class="text-danger" role="alert" />
 
                         <div class="form-floating mb-3">
@@ -100,15 +99,18 @@
                             <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
                         </div>
 
+                        <div class="alert alert-info rounded-3">
+                            Efter oprettelse bliver du sendt videre til QR-koden, hvor du aktiverer 2FA.
+                        </div>
+
                         <button type="submit" class="w-100 btn btn-success btn-lg">
-                            Opret bruger
+                            Opret bruger og aktiver 2FA
                         </button>
 
                         <div class="text-center mt-4">
                             <span class="text-muted">Har du allerede en bruger?</span>
                             <a href="/Account/Login">Log ind her</a>
                         </div>
-
                     </EditForm>
 
                 </div>
@@ -120,6 +122,9 @@
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;
+
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = default!;
@@ -139,6 +144,7 @@
     public async Task RegisterUser(EditContext editContext)
     {
         var user = CreateUser();
+      //  user.TwoFactorEnabled = true;
 
         user.CPR = CprEncryptionService.Encrypt(Input.CPR);
 
@@ -190,7 +196,11 @@
         else
         {
             await SignInManager.SignInAsync(user, isPersistent: false);
-            RedirectManager.RedirectTo(ReturnUrl);
+
+            RedirectManager.RedirectToWithStatus(
+                "Account/Manage/EnableAuthenticator",
+                "Brugeren er oprettet. Scan QR-koden for at aktivere 2FA.",
+                HttpContext);
         }
     }
 

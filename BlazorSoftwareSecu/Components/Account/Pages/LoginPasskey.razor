@@ -1,0 +1,83 @@
+﻿@page "/Account/LoginPasskey"
+
+@using Microsoft.AspNetCore.Identity
+@using BlazorSoftwareSecu.Data
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Log ind med passkey</PageTitle>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow rounded-4">
+                <div class="card-body p-5 text-center">
+
+                    <h1 class="h3 fw-bold mb-3">Log ind med passkey</h1>
+
+                    <p class="text-muted mb-4">
+                        Brug din passkey til at logge ind uden password.
+                    </p>
+
+                    @if (!string.IsNullOrEmpty(Message))
+                    {
+                        <div class="alert alert-danger">@Message</div>
+                    }
+
+                    <form @formname="login-passkey" @onsubmit="LoginWithPasskey" method="post">
+                        <AntiforgeryToken />
+
+                        <PasskeySubmit Operation="PasskeyOperation.Request"
+                                       Name="Input"
+                                       class="w-100 btn btn-success btn-lg">
+                            Log ind med passkey
+                        </PasskeySubmit>
+                    </form>
+
+                    <div class="mt-4">
+                        <a href="/Account/Login">Log ind med password</a>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? Message;
+
+    [SupplyParameterFromForm(FormName = "login-passkey")]
+    private PasskeyInputModel Input { get; set; } = default!;
+
+    protected override void OnInitialized()
+    {
+        Input ??= new();
+    }
+
+    private async Task LoginWithPasskey()
+    {
+        if (!string.IsNullOrEmpty(Input.Error))
+        {
+            Message = Input.Error;
+            return;
+        }
+
+        if (string.IsNullOrEmpty(Input.CredentialJson))
+        {
+            Message = "Browseren returnerede ikke en passkey.";
+            return;
+        }
+
+        var result = await SignInManager.PasskeySignInAsync(Input.CredentialJson);
+
+        if (result.Succeeded)
+        {
+            RedirectManager.RedirectTo("activities");
+            return;
+        }
+
+        Message = "Passkey-login fejlede.";
+    }
+}

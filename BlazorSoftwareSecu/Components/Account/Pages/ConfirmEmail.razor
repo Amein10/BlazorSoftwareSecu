@@ -6,11 +6,12 @@
 @using BlazorSoftwareSecu.Data
 
 @inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email</PageTitle>
+<PageTitle>Bekræft email</PageTitle>
 
-<h1>Confirm email</h1>
+<h1>Bekræft email</h1>
 <StatusMessage Message="@statusMessage" />
 
 @code {
@@ -34,16 +35,28 @@
         }
 
         var user = await UserManager.FindByIdAsync(UserId);
+
         if (user is null)
         {
             HttpContext.Response.StatusCode = StatusCodes.Status404NotFound;
-            statusMessage = $"Error loading user with ID {UserId}";
+            statusMessage = $"Fejl: Bruger med ID {UserId} blev ikke fundet.";
+            return;
         }
-        else
+
+        var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+        var result = await UserManager.ConfirmEmailAsync(user, code);
+
+        if (!result.Succeeded)
         {
-            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
-            var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+            statusMessage = "Fejl: Email kunne ikke bekræftes.";
+            return;
         }
+
+        await SignInManager.SignInAsync(user, isPersistent: false);
+
+        RedirectManager.RedirectToWithStatus(
+            "Account/Manage/EnableAuthenticator",
+            "Email er bekræftet. Scan QR-koden for at aktivere 2FA.",
+            HttpContext);
     }
 }
