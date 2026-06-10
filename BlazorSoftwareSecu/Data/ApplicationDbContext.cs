@@ -8,5 +8,6 @@ namespace BlazorSoftwareSecu.Data
     {
         public DbSet<Activity> Activities { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
     }
 }

@@ -7,9 +7,11 @@
 @using System.Security.Claims
 @using BlazorSoftwareSecu.Data
 @using BlazorSoftwareSecu.Models
+@using BlazorSoftwareSecu.Services
 
 @inject ApplicationDbContext DbContext
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject AuditLogService AuditLogService
 
 <PageTitle>Aktiviteter</PageTitle>
 
@@ -171,6 +173,9 @@
             return;
         }
 
+        var activity = await DbContext.Activities
+            .FirstOrDefaultAsync(a => a.Id == activityId);
+
         DbContext.Enrollments.Add(new Enrollment
         {
             UserId = userId,
@@ -178,6 +183,13 @@
         });
 
         await DbContext.SaveChangesAsync();
+
+        await AuditLogService.LogAsync(
+            userId,
+            "Tilmeldt aktivitet",
+            activity is null
+                ? $"Brugeren tilmeldte sig aktivitet med ID {activityId}."
+                : $"Brugeren tilmeldte sig aktiviteten '{activity.Title}'.");
 
         enrolledActivityIds.Add(activityId);
 
@@ -199,9 +211,19 @@
             return;
         }
 
+        var activity = await DbContext.Activities
+            .FirstOrDefaultAsync(a => a.Id == activityId);
+
         DbContext.Enrollments.Remove(enrollment);
 
         await DbContext.SaveChangesAsync();
+
+        await AuditLogService.LogAsync(
+            userId,
+            "Afmeldt aktivitet",
+            activity is null
+                ? $"Brugeren afmeldte sig aktivitet med ID {activityId}."
+                : $"Brugeren afmeldte sig aktiviteten '{activity.Title}'.");
 
         enrolledActivityIds.Remove(activityId);
 
