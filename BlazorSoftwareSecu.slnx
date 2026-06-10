@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="BlazorSoftwareSecu/BlazorSoftwareSecu.csproj" />
+  <Project Path="SoftwareSecu_Api/SoftwareSecu_Api.csproj" Id="b729adda-bfd9-4043-819a-b1b36c11982b" />
 </Solution>
