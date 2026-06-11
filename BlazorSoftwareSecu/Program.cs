@@ -44,13 +44,11 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     options.SignIn.RequireConfirmedAccount = true;
     options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
 
-    // Password-krav fra opgaven
     options.Password.RequiredLength = 10;
     options.Password.RequireUppercase = true;
     options.Password.RequireDigit = true;
     options.Password.RequireNonAlphanumeric = true;
 
-    // Brute force-beskyttelse
     options.Lockout.MaxFailedAccessAttempts = 5;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.AllowedForNewUsers = true;
@@ -86,6 +84,15 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 
 builder.Services.AddScoped<CprEncryptionService>();
 
+builder.Services.AddHttpClient("SoftwareSecuApi", client =>
+{
+    client.BaseAddress = new Uri("https://localhost:7066/");
+});
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddScoped<UserApiService>();
+
 var app = builder.Build();
 
 // Seed roller først
@@ -104,6 +111,7 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Seed admin-bruger bagefter
 // Seed admin-bruger bagefter
 using (var scope = app.Services.CreateScope())
 {
@@ -130,6 +138,7 @@ using (var scope = app.Services.CreateScope())
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
+            await userManager.SetTwoFactorEnabledAsync(adminUser, false);
         }
     }
     else
@@ -137,6 +146,17 @@ using (var scope = app.Services.CreateScope())
         if (!await userManager.IsInRoleAsync(adminUser, "Admin"))
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
+        }
+
+        if (await userManager.GetTwoFactorEnabledAsync(adminUser))
+        {
+            await userManager.SetTwoFactorEnabledAsync(adminUser, false);
+        }
+
+        if (!adminUser.EmailConfirmed)
+        {
+            adminUser.EmailConfirmed = true;
+            await userManager.UpdateAsync(adminUser);
         }
     }
 }

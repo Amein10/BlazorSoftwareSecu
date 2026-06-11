@@ -5,6 +5,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.EntityFrameworkCore
 @using BlazorSoftwareSecu.Data
+@using BlazorSoftwareSecu.Services
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Security.Claims
 @using Microsoft.JSInterop
@@ -12,6 +13,7 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
+@inject UserApiService UserApiService
 
 <PageTitle>Brugeradministration</PageTitle>
 
@@ -141,7 +143,7 @@
                                     {
                                         <button class="btn btn-outline-danger btn-sm"
                                                 @onclick="() => ConfirmDeleteUser(user)">
-                                            Slet bruger
+                                            Slet bruger via API
                                         </button>
                                     }
                                 </td>
@@ -225,7 +227,7 @@
 
         var confirmed = await JSRuntime.InvokeAsync<bool>(
             "confirm",
-            $"Er du sikker på, at du vil slette brugeren {user.Email}?");
+            $"Er du sikker på, at du vil slette brugeren {user.Email} via Minimal API?");
 
         if (confirmed)
         {
@@ -235,15 +237,15 @@
 
     private async Task DeleteUser(ApplicationUser user)
     {
-        var result = await UserManager.DeleteAsync(user);
+        var result = await UserApiService.DeleteUserAsync(user.Id);
 
-        if (result.Succeeded)
+        if (result.Success)
         {
-            Message = $"{user.Email} er slettet.";
+            Message = $"{user.Email} er slettet via Minimal API.";
         }
         else
         {
-            Message = "Brugeren kunne ikke slettes.";
+            Message = result.Message;
         }
 
         await LoadUsers();
